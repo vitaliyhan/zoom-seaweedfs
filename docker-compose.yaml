@@ -3,9 +3,9 @@ version: '3.9'
 services:
   master:
     image: chrislusf/seaweedfs:4.13
-    ports:
-      - "9333:9333"
-      - "19333:19333"
+    expose:
+      - "9333"
+      - "19333"
     command: 'master -ip=master -ip.bind=0.0.0.0'
     volumes:
       - seaweedfs-master-data:/data
@@ -17,9 +17,9 @@ services:
 
   volume:
     image: chrislusf/seaweedfs:4.13
-    ports:
-      - "8080:8080"
-      - "18080:18080"
+    expose:
+      - "8080"
+      - "18080"
     command: 'volume -ip=volume -mserver="master:9333" -ip.bind=0.0.0.0 -port=8080 -max=100'
     volumes:
       - seaweedfs-volume-data:/data
@@ -29,9 +29,9 @@ services:
 
   filer:
     image: chrislusf/seaweedfs:4.13
-    ports:
-      - "8888:8888"
-      - "18888:18888"
+    expose:
+      - "8888"
+      - "18888"
     command: 'filer -master="master:9333" -ip.bind=0.0.0.0'
     volumes:
       - seaweedfs-filer-data:/data
@@ -41,8 +41,8 @@ services:
 
   s3:
     image: chrislusf/seaweedfs:4.13
-    ports:
-      - "8333:8333"
+    expose:
+      - "8333"
     command: 's3 -filer="filer:8888" -ip.bind=0.0.0.0'
     depends_on:
       - master
