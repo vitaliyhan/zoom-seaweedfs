@@ -1,47 +1,37 @@
-version: '3.9'
-
 services:
   seaweedfs-master:
     image: 'chrislusf/seaweedfs:4.13'
     environment:
-      - SERVICE_USER_S3
-      - SERVICE_PASSWORD_S3
+      - SERVICE_URL_S3_8333
+      - 'AWS_ACCESS_KEY_ID=${SERVICE_USER_S3}'
+      - 'AWS_SECRET_ACCESS_KEY=${SERVICE_PASSWORD_S3}'
     volumes:
       - 'seaweedfs-s3-data:/data'
-    entrypoint:
-      - sh
-      - -c
-      - |
-        cat > /config.json << EOF
-        {"identities":[{"name":"default","credentials":{"accessKey":"$SERVICE_USER_S3","secretKey":"$SERVICE_PASSWORD_S3"},"actions":["Admin","Read","Write","List"]}]}
-        EOF
-        weed server -dir=/data -master.port=9333 -s3 -s3.port=8333 -s3.config=/config.json
+      -
+        type: bind
+        source: ./base-config.json
+        target: /base-config.json
+    entrypoint: "sh -c '\\\nsed \"s/env:AWS_ACCESS_KEY_ID/$AWS_ACCESS_KEY_ID/g\" /base-config.json > /base1-config.json; \\\nsed \"s/env:AWS_SECRET_ACCESS_KEY/$AWS_SECRET_ACCESS_KEY/g\" /base1-config.json > /config.json; \\\nweed server -dir=/data -master.port=9333 -s3 -s3.port=8333 -s3.config=/config.json\\\n'\n"
     healthcheck:
       test:
         - CMD-SHELL
-        - 'wget --spider -q http://0.0.0.0:9333/cluster/status; [ $$? -le 8 ]'
+        - 'wget --spider -q http://0.0.0.0:8333; [ $$? -le 8 ]'
       interval: 10s
       timeout: 5s
       retries: 10
-
-  seaweedfs-volume:
-    image: 'chrislusf/seaweedfs:4.13'
-    command: 'volume -mserver="seaweedfs-master:9333" -ip.bind=0.0.0.0 -port=8080 -max=100'
-    volumes:
-      - 'seaweedfs-volume-data:/data'
-    depends_on:
-      seaweedfs-master:
-        condition: service_healthy
-
   seaweedfs-admin:
     image: 'chrislusf/seaweedfs:4.13'
     environment:
-      - SERVICE_USER_ADMIN
-      - SERVICE_PASSWORD_ADMIN
-    entrypoint:
-      - sh
-      - -c
-      - "admin -master=seaweedfs-master:9333 -adminUser=$SERVICE_USER_ADMIN -adminPassword=$SERVICE_PASSWORD_ADMIN -port=23646 -dataDir=/data"
+      - SERVICE_URL_ADMIN_23646
+      - 'SEAWEED_USER_ADMIN=${SERVICE_USER_ADMIN}'
+      - 'SEAWEED_PASSWORD_ADMIN=${SERVICE_PASSWORD_ADMIN}'
+    command:
+      - admin
+      - '-master=seaweedfs-master:9333'
+      - '-adminUser=${SEAWEED_USER_ADMIN}'
+      - '-adminPassword=${SEAWEED_PASSWORD_ADMIN}'
+      - '-port=23646'
+      - '-dataDir=/data'
     volumes:
       - 'seaweedfs-admin-data:/data'
     healthcheck:
@@ -54,8 +44,3 @@ services:
     depends_on:
       seaweedfs-master:
         condition: service_healthy
-
-volumes:
-  seaweedfs-s3-data:
-  seaweedfs-volume-data:
-  seaweedfs-admin-data:
