@@ -17,7 +17,7 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - 'wget --spider -q http://0.0.0.0:8333; [ $$? -le 8 ]'
+        - 'wget --spider -q http://0.0.0.0:9333/cluster/status; [ $$? -le 8 ]'
       interval: 10s
       timeout: 5s
       retries: 10
