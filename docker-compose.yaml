@@ -8,11 +8,14 @@ services:
       - SERVICE_PASSWORD_S3
     volumes:
       - 'seaweedfs-s3-data:/data'
-      -
-        type: bind
-        source: ./base-config.json
-        target: /base-config.json
-    entrypoint: "sh -c 'sed \"s/env:AWS_ACCESS_KEY_ID/$SERVICE_USER_S3/g\" /base-config.json > /base1-config.json && sed \"s/env:AWS_SECRET_ACCESS_KEY/$SERVICE_PASSWORD_S3/g\" /base1-config.json > /config.json && weed server -dir=/data -master.port=9333 -s3 -s3.port=8333 -s3.config=/config.json'"
+    entrypoint:
+      - sh
+      - -c
+      - |
+        cat > /config.json << EOF
+        {"identities":[{"name":"default","credentials":{"accessKey":"$SERVICE_USER_S3","secretKey":"$SERVICE_PASSWORD_S3"},"actions":["Admin","Read","Write","List"]}]}
+        EOF
+        weed server -dir=/data -master.port=9333 -s3 -s3.port=8333 -s3.config=/config.json
     healthcheck:
       test:
         - CMD-SHELL
@@ -35,7 +38,10 @@ services:
     environment:
       - SERVICE_USER_ADMIN
       - SERVICE_PASSWORD_ADMIN
-    command: "sh -c 'admin -master=seaweedfs-master:9333 -adminUser=$SERVICE_USER_ADMIN -adminPassword=$SERVICE_PASSWORD_ADMIN -port=23646 -dataDir=/data'"
+    entrypoint:
+      - sh
+      - -c
+      - "admin -master=seaweedfs-master:9333 -adminUser=$SERVICE_USER_ADMIN -adminPassword=$SERVICE_PASSWORD_ADMIN -port=23646 -dataDir=/data"
     volumes:
       - 'seaweedfs-admin-data:/data'
     healthcheck:
