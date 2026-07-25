@@ -50,15 +50,22 @@ services:
       - filer
 
   admin-alpha:
-    image: chrislusf/seaweedfs-admin:latest
-    expose:
-      - "80"
+    image: chrislusf/seaweedfs:4.13
     environment:
-      - MASTER_URL=http://master:9333
-      - FILER_URL=http://filer:8888
+      - SEAWEED_USER_ADMIN=${SERVICE_USER_ADMIN}
+      - SEAWEED_PASSWORD_ADMIN=${SERVICE_PASSWORD_ADMIN}
+    command:
+      - admin
+      - '-master=master:9333'
+      - '-adminUser=${SEAWEED_USER_ADMIN}'
+      - '-adminPassword=${SEAWEED_PASSWORD_ADMIN}'
+      - '-port=23646'
+      - '-dataDir=/data'
+    expose:
+      - "23646"
     depends_on:
-      - master
-      - filer
+      master:
+        condition: service_healthy
 
 volumes:
   seaweedfs-master-data:
