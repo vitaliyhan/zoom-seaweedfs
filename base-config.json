@@ -1,16 +1,19 @@
 {
   "identities": [
     {
-      "name": "default",
-      "credentials": {
-        "accessKey": "env:AWS_ACCESS_KEY_ID",
-        "secretKey": "env:AWS_SECRET_ACCESS_KEY"
-      },
+      "name": "admin",
+      "credentials": [
+        {
+          "accessKey": "env:AWS_ACCESS_KEY_ID",
+          "secretKey": "env:AWS_SECRET_ACCESS_KEY"
+        }
+      ],
       "actions": [
         "Admin",
         "Read",
         "Write",
-        "List"
+        "List",
+        "Tagging"
       ]
     }
   ]
