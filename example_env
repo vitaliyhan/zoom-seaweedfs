@@ -1,0 +1,7 @@
+# S3 Credentials (used by seaweedfs-master)
+SERVICE_USER_S3=your_s3_access_key
+SERVICE_PASSWORD_S3=your_s3_secret_key
+
+# Admin Credentials (used by seaweedfs-admin)
+SERVICE_USER_ADMIN=admin
+SERVICE_PASSWORD_ADMIN=changeme

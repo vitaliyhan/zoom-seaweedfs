@@ -1,73 +1,63 @@
 version: '3.9'
 
 services:
-  master:
-    image: chrislusf/seaweedfs:4.13
-    expose:
-      - "9333"
-      - "19333"
-    command: 'master -ip=master -ip.bind=0.0.0.0'
+  seaweedfs-master:
+    image: 'chrislusf/seaweedfs:4.13'
+    environment:
+      - SERVICE_URL_S3_8333
+      - 'AWS_ACCESS_KEY_ID=${SERVICE_USER_S3}'
+      - 'AWS_SECRET_ACCESS_KEY=${SERVICE_PASSWORD_S3}'
     volumes:
-      - seaweedfs-master-data:/data
+      - 'seaweedfs-s3-data:/data'
+      -
+        type: bind
+        source: ./base-config.json
+        target: /base-config.json
+    entrypoint: "sh -c '\\\nsed \"s/env:AWS_ACCESS_KEY_ID/$AWS_ACCESS_KEY_ID/g\" /base-config.json > /base1-config.json; \\\nsed \"s/env:AWS_SECRET_ACCESS_KEY/$AWS_SECRET_ACCESS_KEY/g\" /base1-config.json > /config.json; \\\nweed server -dir=/data -master.port=9333 -s3 -s3.port=8333 -s3.config=/config.json\\\n'\n"
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9333/cluster/status"]
+      test:
+        - CMD-SHELL
+        - 'wget --spider -q http://0.0.0.0:8333; [ $$? -le 8 ]'
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
 
-  volume:
-    image: chrislusf/seaweedfs:4.13
-    expose:
-      - "8080"
-      - "18080"
-    command: 'volume -ip=volume -mserver="master:9333" -ip.bind=0.0.0.0 -port=8080 -max=100'
+  seaweedfs-volume:
+    image: 'chrislusf/seaweedfs:4.13'
+    command: 'volume -mserver="seaweedfs-master:9333" -ip.bind=0.0.0.0 -port=8080 -max=100'
     volumes:
-      - seaweedfs-volume-data:/data
+      - 'seaweedfs-volume-data:/data'
     depends_on:
-      master:
+      seaweedfs-master:
         condition: service_healthy
 
-  filer:
-    image: chrislusf/seaweedfs:4.13
-    expose:
-      - "8888"
-      - "18888"
-    command: 'filer -master="master:9333" -ip.bind=0.0.0.0'
-    volumes:
-      - seaweedfs-filer-data:/data
-    depends_on:
-      - master
-      - volume
-
-  s3:
-    image: chrislusf/seaweedfs:4.13
-    expose:
-      - "8333"
-    command: 's3 -filer="filer:8888" -ip.bind=0.0.0.0'
-    depends_on:
-      - master
-      - volume
-      - filer
-
-  admin-alpha:
-    image: chrislusf/seaweedfs:4.13
+  seaweedfs-admin:
+    image: 'chrislusf/seaweedfs:4.13'
     environment:
-      - SEAWEED_USER_ADMIN=${SERVICE_USER_ADMIN}
-      - SEAWEED_PASSWORD_ADMIN=${SERVICE_PASSWORD_ADMIN}
+      - SERVICE_URL_ADMIN_23646
+      - 'SEAWEED_USER_ADMIN=${SERVICE_USER_ADMIN}'
+      - 'SEAWEED_PASSWORD_ADMIN=${SERVICE_PASSWORD_ADMIN}'
     command:
       - admin
-      - '-master=master:9333'
+      - '-master=seaweedfs-master:9333'
       - '-adminUser=${SEAWEED_USER_ADMIN}'
       - '-adminPassword=${SEAWEED_PASSWORD_ADMIN}'
       - '-port=23646'
       - '-dataDir=/data'
-    expose:
-      - "23646"
+    volumes:
+      - 'seaweedfs-admin-data:/data'
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'wget --spider -q http://0.0.0.0:23646; [ $$? -le 8 ]'
+      interval: 10s
+      timeout: 5s
+      retries: 10
     depends_on:
-      master:
+      seaweedfs-master:
         condition: service_healthy
 
 volumes:
-  seaweedfs-master-data:
+  seaweedfs-s3-data:
   seaweedfs-volume-data:
-  seaweedfs-filer-data:
+  seaweedfs-admin-data:
