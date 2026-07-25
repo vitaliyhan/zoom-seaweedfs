@@ -49,6 +49,17 @@ services:
       - volume
       - filer
 
+  admin-alpha:
+    image: chrislusf/seaweedfs-admin:latest
+    expose:
+      - "80"
+    environment:
+      - MASTER_URL=http://master:9333
+      - FILER_URL=http://filer:8888
+    depends_on:
+      - master
+      - filer
+
 volumes:
   seaweedfs-master-data:
   seaweedfs-volume-data:
