@@ -48,8 +48,8 @@ services:
           }
     entrypoint: |
       sh -c '\
-      sed "s/env:AWS_ACCESS_KEY_ID/$AWS_ACCESS_KEY_ID/g" /base-config.json > /base1-config.json; \
-      sed "s/env:AWS_SECRET_ACCESS_KEY/$AWS_SECRET_ACCESS_KEY/g" /base1-config.json > /config.json; \
+      sed "s/env:AWS_ACCESS_KEY_ID/$$AWS_ACCESS_KEY_ID/g" /base-config.json > /base1-config.json; \
+      sed "s/env:AWS_SECRET_ACCESS_KEY/$$AWS_SECRET_ACCESS_KEY/g" /base1-config.json > /config.json; \
       weed server -dir=/data -master.port=9333 -s3 -s3.port=8333 -s3.config=/config.json -volume.max=100 -master.volumeSizeLimitMB=1024\
       '
     healthcheck:
@@ -64,13 +64,14 @@ services:
     image: chrislusf/seaweedfs:4.13
     environment:
       - SERVICE_URL_ADMIN_23646
-      - SEAWEED_USER_ADMIN=${SERVICE_USER_ADMIN}
-      - SEAWEED_PASSWORD_ADMIN=${SERVICE_PASSWORD_ADMIN}
+    # NOTE: compose interpolates ${...} at parse time from Coolify's .env —
+    # only SERVICE_* names exist there. Container-only env vars (or vars defined
+    # in this file's environment: block) resolve to EMPTY here. Use SERVICE_*.
     command:
       - admin
       - "-master=seaweedfs-master:9333"
-      - "-adminUser=${SEAWEED_USER_ADMIN}"
-      - "-adminPassword=${SEAWEED_PASSWORD_ADMIN}"
+      - "-adminUser=${SERVICE_USER_ADMIN}"
+      - "-adminPassword=${SERVICE_PASSWORD_ADMIN}"
       - "-port=23646"
       - "-dataDir=/data"
     volumes:
@@ -85,3 +86,7 @@ services:
     depends_on:
       seaweedfs-master:
         condition: service_healthy
+
+volumes:
+  seaweedfs-s3-data:
+  seaweedfs-admin-data:

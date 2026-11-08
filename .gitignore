@@ -1,0 +1,4 @@
+# real credentials — never commit; copy from .env.example
+.env
+.env.*
+!.env.example

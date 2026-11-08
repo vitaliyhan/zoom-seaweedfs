@@ -1,6 +1,12 @@
 {
   "identities": [
     {
+      "name": "anonymous",
+      "actions": [
+        "Read"
+      ]
+    },
+    {
       "name": "admin",
       "credentials": [
         {
@@ -11,9 +17,11 @@
       "actions": [
         "Admin",
         "Read",
-        "Write",
+        "ReadAcp",
         "List",
-        "Tagging"
+        "Tagging",
+        "Write",
+        "WriteAcp"
       ]
     }
   ]
